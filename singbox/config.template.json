@@ -1,0 +1,55 @@
+{
+  "// NOTE": "SANITIZED TEMPLATE. Fill in YOUR VLESS node (SERVER_ADDRESS/UUID/SNI/keys). No real creds here.",
+  "log": { "level": "warn" },
+  "dns": {
+    "//": "Ported features: HTTPS-RR reject (keeps SNI visible), kill browser auto-DoH. fakeip optional.",
+    "strategy": "ipv4_only",
+    "independent_cache": true,
+    "servers": [
+      { "tag": "agh", "address": "127.0.0.1:5300", "//": "your AdGuard Home (clean DoH upstreams)" },
+      { "tag": "fakeip", "address": "fakeip" }
+    ],
+    "fakeip": { "enabled": false, "//set-true-for-fakeip-migration": true, "inet4_range": "198.18.0.0/15" },
+    "rules": [
+      { "query_type": ["HTTPS"], "action": "reject", "//": "no ECH/HTTP3-RR → SNI stays visible for routing" },
+      { "domain_suffix": ["use-application-dns.net"], "action": "reject", "//": "disable Firefox auto-DoH bypass" }
+    ],
+    "final": "agh"
+  },
+  "inbounds": [
+    { "tag": "dns-in", "type": "direct", "listen": "127.0.0.1", "listen_port": 5353 },
+    { "tag": "redirect-in", "type": "redirect", "listen": "::", "listen_port": 7896 },
+    { "tag": "mixed-in", "type": "mixed", "listen": "::", "listen_port": 2080 }
+  ],
+  "outbounds": [
+    {
+      "tag": "proxy", "type": "vless",
+      "server": "SERVER_ADDRESS", "server_port": 443,
+      "uuid": "UUID-GOES-HERE",
+      "flow": "xtls-rprx-vision", "packet_encoding": "xudp",
+      "tls": {
+        "enabled": true, "server_name": "SNI-GOES-HERE",
+        "utls": { "enabled": true, "fingerprint": "chrome" },
+        "reality": { "enabled": true, "public_key": "REALITY_PUBLIC_KEY", "short_id": "SHORT_ID" }
+      }
+    },
+    { "tag": "direct", "type": "direct" },
+    { "tag": "block", "type": "block" }
+  ],
+  "route": {
+    "//": "Ported feature: QUIC reject → forces TCP so REDIRECT/DPI-bypass covers it (no UDP-tproxy needed).",
+    "rules": [
+      { "action": "sniff" },
+      { "protocol": "dns", "action": "hijack-dns" },
+      { "protocol": "quic", "action": "reject" },
+      { "ip_is_private": true, "outbound": "direct" },
+      { "domain_suffix": ["FILL-FROM domains/direct.txt"], "outbound": "direct" },
+      { "domain_suffix": ["FILL-FROM domains/proxy-services.txt + ai.txt + streaming.txt"], "outbound": "proxy" }
+    ],
+    "final": "direct"
+  },
+  "experimental": {
+    "cache_file": { "enabled": true, "path": "cache.db", "store_fakeip": true,
+                    "//": "required if you enable fakeip above" }
+  }
+}

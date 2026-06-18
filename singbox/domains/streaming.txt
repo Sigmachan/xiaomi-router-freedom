@@ -1,0 +1,10 @@
+# RU streaming mirrors (hdrezka et al) — route through the tunnel.
+hdrezka.ag
+hdrezka.me
+hdrezka.cc
+hdrezka.tv
+hdrezka.co
+hdrezka.in
+rezka.ag
+rezka.tv
+hdrzk.org

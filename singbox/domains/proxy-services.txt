@@ -1,0 +1,55 @@
+# Services to route THROUGH the tunnel (domain_suffix). Curated from community lists.
+# youtube
+youtube.com
+youtu.be
+yt.be
+ytimg.com
+ggpht.com
+youtube-nocookie.com
+googlevideo.com
+jnn-pa.googleapis.com
+youtubei.googleapis.com
+youtube.googleapis.com
+youtube-ui.l.google.com
+# discord
+discord.com
+discord.gg
+discordapp.com
+discordapp.net
+discordcdn.com
+discord.media
+cloudflare-ech.com
+# telegram
+telegram.org
+t.me
+telegram.me
+telesco.pe
+telegram-cdn.org
+# social / media
+instagram.com
+cdninstagram.com
+facebook.com
+fbcdn.net
+twitter.com
+x.com
+t.co
+twimg.com
+twitch.tv
+jtvnw.net
+ttvnw.net
+soundcloud.com
+sndcdn.com
+whatsapp.com
+whatsapp.net
+wa.me
+# gaming
+roblox.com
+rbxcdn.com
+# RU-blocked resources
+rutracker.org
+rutracker.net
+rutracker.cc
+rutracker.cloud
+rutor.info
+rutor.is
+ntc.party

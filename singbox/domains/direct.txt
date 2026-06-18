@@ -1,0 +1,11 @@
+# Keep DIRECT (bypass tunnel) — fast CDNs not blocked, lower latency direct.
+steampowered.com
+steamcommunity.com
+steamstatic.com
+steamcontent.com
+steamusercontent.com
+valvesoftware.com
+github.com
+githubusercontent.com
+githubassets.com
+ghcr.io
