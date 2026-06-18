@@ -34,6 +34,7 @@ install() {
   echo "✓ $($BIN version | head -1)"; $BIN check -c "$SB_DIR/config.json" && echo "✓ config valid" || echo "⚠ edit $SB_DIR/config.json"
 }
 use_native() {
+  touch "$SB_DIR/native.enabled"   # boot-persistence marker (watchdog starts native on boot)
   $BIN check -c "$SB_DIR/config.json" || { echo "config invalid — aborting"; exit 1; }
   $DK update --restart=no "$DOCKER_CT" >/dev/null 2>&1 || true; $DK stop "$DOCKER_CT" >/dev/null 2>&1 || true
   "$BIN" run -c "$SB_DIR/config.json" >/dev/null 2>&1 & echo $! > "$PIDF"; sleep 2
@@ -41,6 +42,7 @@ use_native() {
     || { echo "native failed — reverting to docker"; use_docker; }
 }
 use_docker() {
+  rm -f "$SB_DIR/native.enabled"
   [ -f "$PIDF" ] && kill "$(cat $PIDF)" 2>/dev/null; rm -f "$PIDF"; pkill -f sing-box.real 2>/dev/null || true; sleep 1
   $DK update --restart=always "$DOCKER_CT" >/dev/null 2>&1 || true; $DK start "$DOCKER_CT" >/dev/null 2>&1 && echo "✓ DOCKER active"
 }
@@ -48,3 +50,8 @@ status() { { [ -f "$PIDF" ] && kill -0 "$(cat $PIDF)" 2>/dev/null && echo "nativ
            echo -n "docker: "; $DK ps --filter name="$DOCKER_CT" --format '{{.Status}}' 2>/dev/null; }
 case "$1" in install) install;; use-native) use_native;; use-docker) use_docker;; status) status;;
   *) echo "Usage: $0 {install|use-native|use-docker|status}"; exit 1;; esac
+
+# BOOT PERSISTENCE: add a marker-gated watchdog to your persistent boot hook (e.g. /data/entware-mount.sh,
+# run every minute by cron). Pseudocode:
+#   [ -f /opt/etc/sing-box/native.enabled ] && ! pidfile-alive && ! port-7896-busy && /opt/bin/sing-box run -c CFG & echo $! >PIDF
+# Without this, neither native nor docker (restart=no) starts on reboot.
