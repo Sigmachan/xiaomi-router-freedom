@@ -1,64 +1,50 @@
 #!/bin/sh
-# Native sing-box via Entware (/opt) with a docker<->native switch.
-# For Xiaomi Qualcomm vendor-OpenWrt boxes where sing-box usually runs in docker — this gives a
-# native alternative on the same redirect port, so you can flip between them.
-# Prereq: Entware installed (see ../entware/). Run as root.
-# Usage: native-singbox.sh {install|use-native|use-docker|status}
+# Native sing-box via Entware (/opt) with a docker<->native switch — for Xiaomi Qualcomm vendor-OpenWrt boxes.
+# Hard-won gotchas baked in:
+#  * The system is MUSL; the official sing-box binary is GLIBC-dynamic. Entware ships glibc → run sing-box
+#    through Entware's loader via a wrapper. (DO NOT patchelf the binary — it SEGFAULTS Go binaries.)
+#  * The wrapper makes the process show as 'ld-linux-*', so Entware rc.func can't track it → use a PIDFILE.
+#  * sing-box rule_set .srs paths in a docker config are container-internal (/etc/sing-box/rs/...) → rewrite
+#    them to the native location and copy the .srs over.
+#  * On switch, set the docker container restart policy so the two don't fight for the redirect port on boot.
+# Prereq: Entware installed (../entware/). Run as root. Usage: native-singbox.sh {install|use-native|use-docker|status}
 set -e
-SB_VER="${SB_VER:-1.13.13}"
-ARCH="${ARCH:-linux-arm64}"
-SB_DIR=/opt/etc/sing-box
+SB_VER="${SB_VER:-1.13.13}"; ARCH="${ARCH:-linux-arm64}"
+SB_DIR=/opt/etc/sing-box; PIDF=/var/run/singbox-native.pid
 DOCKER_BIN="${DOCKER_BIN:-/mnt/usb-XXXX/mi_docker/docker-binaries/docker}"
-DOCKER_SOCK="${DOCKER_SOCK:-unix:///var/run/docker1.sock}"
-DOCKER_CT="${DOCKER_CT:-sing-box}"
-DK="$DOCKER_BIN -H $DOCKER_SOCK"
-PATH=/opt/sbin:/opt/bin:$PATH
+DOCKER_SOCK="${DOCKER_SOCK:-unix:///var/run/docker1.sock}"; DOCKER_CT="${DOCKER_CT:-sing-box}"
+# where your working (docker) config + rs/ live, to seed the native copy:
+SRC_CFG="${SRC_CFG:-/mnt/usb-XXXX/mi_docker/sing-box-data/config.json}"
+SRC_RS="${SRC_RS:-/mnt/usb-XXXX/mi_docker/sing-box-data/rs}"
+DK="$DOCKER_BIN -H $DOCKER_SOCK"; BIN=/opt/bin/sing-box; PATH=/opt/sbin:/opt/bin:$PATH
 
 install() {
-  [ -x /opt/bin/opkg ] || { echo "Entware /opt not found — install Entware first"; exit 1; }
-  mkdir -p "$SB_DIR" /opt/etc/init.d
-  opkg list-installed 2>/dev/null | grep -q '^wget-ssl' || opkg install wget-ssl ca-bundle 2>/dev/null || true
-  WGET=/opt/bin/wget; [ -x "$WGET" ] || WGET=wget
-  URL="https://github.com/SagerNet/sing-box/releases/download/v${SB_VER}/sing-box-${SB_VER}-${ARCH}.tar.gz"
-  echo "↓ $URL"
-  cd /tmp && $WGET -O /tmp/sb.tgz "$URL" && tar xzf /tmp/sb.tgz
-  cp "/tmp/sing-box-${SB_VER}-${ARCH}/sing-box" /opt/bin/sing-box && chmod +x /opt/bin/sing-box
-  if [ ! -f "$SB_DIR/config.json" ]; then
-    echo "⚠ put your config at $SB_DIR/config.json (copy your working one, or use config.template.json)"
-  fi
-  cat > /opt/etc/init.d/S99sing-box <<'EOS'
-#!/bin/sh
-ENABLED=yes
-PROCS=sing-box
-ARGS="run -c /opt/etc/sing-box/config.json"
-PREARGS=""
-DESC="sing-box"
-PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
-. /opt/etc/init.d/rc.func
-EOS
-  chmod +x /opt/etc/init.d/S99sing-box
-  echo "✓ installed: $(/opt/bin/sing-box version | head -1)"
-  echo "  Persistence: Entware's rc.unslung (started by the /data/entware-mount.sh hook) runs S99sing-box on boot."
+  [ -x /opt/bin/opkg ] || { echo "install Entware first"; exit 1; }
+  opkg list-installed 2>/dev/null | grep -q '^wget-ssl' || opkg install wget-ssl ca-bundle >/dev/null 2>&1 || true
+  LDR=$(ls /opt/lib/ld-linux-aarch64.so.1 2>/dev/null | head -1)
+  [ -n "$LDR" ] || { echo "Entware glibc loader not found at /opt/lib"; exit 1; }
+  cd /tmp; /opt/bin/wget -O sb.tgz "https://github.com/SagerNet/sing-box/releases/download/v${SB_VER}/sing-box-${SB_VER}-${ARCH}.tar.gz"
+  rm -rf sbx; mkdir sbx; gzip -dc sb.tgz | tar x -C sbx
+  cp "$(find sbx -name sing-box -type f|head -1)" /opt/bin/sing-box.real; chmod +x /opt/bin/sing-box.real
+  printf '#!/bin/sh\nexec %s --library-path /opt/lib /opt/bin/sing-box.real "$@"\n' "$LDR" > "$BIN"; chmod +x "$BIN"
+  mkdir -p "$SB_DIR"
+  [ -f "$SRC_CFG" ] && cp "$SRC_CFG" "$SB_DIR/config.json"
+  [ -d "$SRC_RS" ] && cp -a "$SRC_RS" "$SB_DIR/"
+  sed -i 's#/etc/sing-box/#/opt/etc/sing-box/#g' "$SB_DIR/config.json" 2>/dev/null || true
+  echo "✓ $($BIN version | head -1)"; $BIN check -c "$SB_DIR/config.json" && echo "✓ config valid" || echo "⚠ edit $SB_DIR/config.json"
 }
-check() { /opt/bin/sing-box check -c "$SB_DIR/config.json" && echo "config OK"; }
 use_native() {
-  check
-  $DK stop "$DOCKER_CT" 2>/dev/null && echo "docker sing-box stopped" || true
-  /opt/etc/init.d/S99sing-box restart
-  echo "✓ NATIVE sing-box active (docker stopped). Rollback: $0 use-docker"
+  $BIN check -c "$SB_DIR/config.json" || { echo "config invalid — aborting"; exit 1; }
+  $DK update --restart=no "$DOCKER_CT" >/dev/null 2>&1 || true; $DK stop "$DOCKER_CT" >/dev/null 2>&1 || true
+  "$BIN" run -c "$SB_DIR/config.json" >/dev/null 2>&1 & echo $! > "$PIDF"; sleep 2
+  kill -0 "$(cat $PIDF)" 2>/dev/null && echo "✓ NATIVE active (docker stopped). rollback: $0 use-docker" \
+    || { echo "native failed — reverting to docker"; use_docker; }
 }
 use_docker() {
-  /opt/etc/init.d/S99sing-box stop 2>/dev/null && echo "native stopped" || true
-  $DK start "$DOCKER_CT" && echo "✓ DOCKER sing-box active (native stopped)."
+  [ -f "$PIDF" ] && kill "$(cat $PIDF)" 2>/dev/null; rm -f "$PIDF"; pkill -f sing-box.real 2>/dev/null || true; sleep 1
+  $DK update --restart=always "$DOCKER_CT" >/dev/null 2>&1 || true; $DK start "$DOCKER_CT" >/dev/null 2>&1 && echo "✓ DOCKER active"
 }
-status() {
-  echo -n "native: "; pgrep -f "/opt/bin/sing-box" >/dev/null && echo "RUNNING" || echo "stopped"
-  echo -n "docker: "; $DK ps --filter name="$DOCKER_CT" --format '{{.Status}}' 2>/dev/null || echo "?"
-}
-case "$1" in
-  install) install ;;
-  use-native) use_native ;;
-  use-docker) use_docker ;;
-  status) status ;;
-  *) echo "Usage: $0 {install|use-native|use-docker|status}"; exit 1 ;;
-esac
+status() { { [ -f "$PIDF" ] && kill -0 "$(cat $PIDF)" 2>/dev/null && echo "native: RUNNING"; } || echo "native: stopped"
+           echo -n "docker: "; $DK ps --filter name="$DOCKER_CT" --format '{{.Status}}' 2>/dev/null; }
+case "$1" in install) install;; use-native) use_native;; use-docker) use_docker;; status) status;;
+  *) echo "Usage: $0 {install|use-native|use-docker|status}"; exit 1;; esac
