@@ -28,6 +28,8 @@ This kit packages both paths + the DNS-poisoning fix + curated routing domain li
 | `singbox/domains/` | Curated `domain_suffix` lists (YouTube/Discord/Telegram/AI-services/hdrezka/…) for proxy/direct routing. |
 | `docs/router-facts.md` | Hard facts about the platform (partitions, squashfs, Entware, kmods). |
 | `docs/fakeip-migration.md` | Plan to move to the cleaner fakeip+tproxy model. |
+| `docs/podkop-build.md` | Build the open **podkop** (LuCI fakeip+tproxy) for a custom arch via Dockerfile-SDK — the upgrade path on clean OpenWrt 24.10. |
+| `dns/alt-https-dns-proxy.md` | No-Docker DNS fix: tiny `https_dns_proxy` (DoH) + dnsmasq, alternative to AdGuard Home. |
 
 ## Quick start
 1. Have a USB drive mounted (these routers expose it, e.g. `/mnt/usb-XXXX`). Set `USB_ROOT` in the scripts.
