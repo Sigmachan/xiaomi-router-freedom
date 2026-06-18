@@ -26,6 +26,7 @@ This kit packages both paths + the DNS-poisoning fix + curated routing domain li
 | `dns/setup-dnsmasq-agh.sh` | Point the router's dnsmasq at a local AdGuard Home (encrypted DoH upstreams) for the whole LAN. |
 | `singbox/config.template.json` | Sanitized sing-box template (fill in YOUR VLESS node). |
 | `singbox/domains/` | Curated `domain_suffix` lists (YouTube/Discord/Telegram/AI-services/hdrezka/…) for proxy/direct routing. |
+| `singbox/rulesets.md` | **Recommended:** auto-updating remote rule-sets (itdoginfo/allow-domains `.srs`) instead of static lists. |
 | `docs/router-facts.md` | Hard facts about the platform (partitions, squashfs, Entware, kmods). |
 | `docs/fakeip-migration.md` | Plan to move to the cleaner fakeip+tproxy model. |
 | `docs/podkop-build.md` | Build the open **podkop** (LuCI fakeip+tproxy) for a custom arch via Dockerfile-SDK — the upgrade path on clean OpenWrt 24.10. |

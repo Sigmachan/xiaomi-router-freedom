@@ -37,6 +37,7 @@
     { "tag": "block", "type": "block" }
   ],
   "route": {
+    "//rulesets": "RECOMMENDED: use auto-updating itdoginfo allow-domains remote rule_set instead of static domain_suffix — see rulesets.md",
     "//": "Ported feature: QUIC reject → forces TCP so REDIRECT/DPI-bypass covers it (no UDP-tproxy needed).",
     "rules": [
       { "action": "sniff" },
