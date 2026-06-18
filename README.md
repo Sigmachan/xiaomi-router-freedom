@@ -25,6 +25,7 @@ This kit packages both paths + the DNS-poisoning fix + curated routing domain li
 | `dns/fix-poisoning.md` | Why RU DNS-poisoning makes sites read "unavailable in region" and the fix. |
 | `dns/setup-dnsmasq-agh.sh` | Point the router's dnsmasq at a local AdGuard Home (encrypted DoH upstreams) for the whole LAN. |
 | `singbox/config.template.json` | Sanitized sing-box template (fill in YOUR VLESS node). |
+| `singbox/native-singbox.sh` | Run sing-box **natively** via Entware (no docker) + switch docker↔native on the same redirect port. |
 | `singbox/domains/` | Curated `domain_suffix` lists (YouTube/Discord/Telegram/AI-services/hdrezka/…) for proxy/direct routing. |
 | `singbox/rulesets.md` | **Recommended:** auto-updating remote rule-sets (itdoginfo/allow-domains `.srs`) instead of static lists. |
 | `docs/router-facts.md` | Hard facts about the platform (partitions, squashfs, Entware, kmods). |
