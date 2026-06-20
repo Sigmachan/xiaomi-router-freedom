@@ -30,6 +30,7 @@ This kit packages both paths + the DNS-poisoning fix + curated routing domain li
 | `singbox/native-singbox.sh` | Run sing-box **natively** via Entware (no docker) + switch docker↔native on the same redirect port. |
 | `singbox/domains/` | Curated `domain_suffix` lists (YouTube/Discord/Telegram/AI-services/hdrezka/…) for proxy/direct routing. |
 | `singbox/rulesets.md` | **Recommended:** auto-updating remote rule-sets (itdoginfo/allow-domains `.srs`) instead of static lists. |
+| **`mihomo/`** | **Current proxy client: mihomo (Clash.Meta) in TUN mode**, replacing native sing-box. Intercepts **TCP + UDP/QUIC** with no tproxy (only `NET_ADMIN` + `/dev/net/tun`), RU-direct/blocked-tunnel routing, zero-click **yacd** web dashboard, reboot-persistent via fw3 include. See [`mihomo/README.md`](mihomo/README.md). |
 | `docs/router-facts.md` | Hard facts about the platform (partitions, squashfs, Entware, kmods). |
 | `docs/fakeip-migration.md` | Plan to move to the cleaner fakeip+tproxy model. |
 | `docs/podkop-build.md` | Build the open **podkop** (LuCI fakeip+tproxy) for a custom arch via Dockerfile-SDK — the upgrade path on clean OpenWrt 24.10. |

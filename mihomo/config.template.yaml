@@ -1,0 +1,154 @@
+# mihomo — Xiaomi BE10000 (cherry-pick: sing-box -> mihomo TUN)
+# DNS: loopback only, НЕ перехватывает LAN (dnsmasq->AGH->unbound целы)
+mixed-port: 7890
+redir-port: 7891
+allow-lan: true
+mode: rule
+log-level: info
+external-controller: 0.0.0.0:9010
+secret: ""
+external-ui: ui
+external-ui-name: metacubexd
+geodata-mode: true
+geo-auto-update: false
+
+tun:
+  enable: true
+  stack: mixed
+  auto-detect-interface: true
+  include-interface:
+    - br-lan
+
+sniffer:
+  enable: true
+  force-dns-mapping: true
+  parse-pure-ip: true
+  override-destination: true
+  sniffing:
+    - tls
+    - http
+    - quic
+
+dns:
+  enable: true
+  listen: 127.0.0.1:1053
+  ipv6: false
+  enhanced-mode: redir-host
+  nameserver:
+    - 127.0.0.1:5353
+  proxy-server-nameserver:
+    - 127.0.0.1:5353
+
+proxies:
+  - name: upstream
+    type: vless
+    server: YOUR_SERVER_HOST
+    port: 443
+    uuid: YOUR_UUID
+    network: tcp
+    tls: true
+    udp: true
+    packet-encoding: xudp
+    flow: xtls-rprx-vision
+    servername: YOUR_SNI
+    client-fingerprint: firefox
+    reality-opts:
+      public-key: YOUR_REALITY_PUBLIC_KEY
+      short-id: "YOUR_SHORT_ID"
+
+proxy-groups:
+  - name: Proxy
+    type: select
+    proxies:
+      - upstream
+      - DIRECT
+
+rule-providers:
+  refilter_domains:
+    type: file
+    behavior: domain
+    path: ./ruleset/refilter_domains.txt
+    format: text
+  refilter_ips:
+    type: file
+    behavior: ipcidr
+    path: ./ruleset/refilter_ips.txt
+    format: text
+
+rules:
+  # --- Torrent-трекеры -> туннель (выше RU-direct) ---
+  - DOMAIN-SUFFIX,rutracker.org,Proxy
+  - DOMAIN-SUFFIX,rutracker.net,Proxy
+  - DOMAIN-SUFFIX,rutracker.cc,Proxy
+  - DOMAIN-SUFFIX,rutracker.ru,Proxy
+  - DOMAIN-SUFFIX,rutrk.org,Proxy
+  - DOMAIN-SUFFIX,nnmclub.to,Proxy
+  - DOMAIN-SUFFIX,nnm-club.ws,Proxy
+  - DOMAIN-SUFFIX,nnm-club.name,Proxy
+  - DOMAIN-SUFFIX,nnmclub.ru,Proxy
+  - DOMAIN-SUFFIX,kinozal.tv,Proxy
+  - DOMAIN-SUFFIX,kinozal.guru,Proxy
+  - DOMAIN-SUFFIX,kinozal.me,Proxy
+  - DOMAIN-SUFFIX,rutor.info,Proxy
+  - DOMAIN-SUFFIX,rutor.org,Proxy
+  - DOMAIN-SUFFIX,rutor.is,Proxy
+  - DOMAIN-SUFFIX,1337x.to,Proxy
+  - DOMAIN-SUFFIX,thepiratebay.org,Proxy
+  - DOMAIN-SUFFIX,nyaa.si,Proxy
+  # --- РФ напрямую (маркетплейсы / yandex / vk / .ru .su .рф) ---
+  - DOMAIN-SUFFIX,ru,DIRECT
+  - DOMAIN-SUFFIX,su,DIRECT
+  - DOMAIN-SUFFIX,xn--p1ai,DIRECT
+  - DOMAIN-SUFFIX,vk.com,DIRECT
+  - DOMAIN-SUFFIX,vk.ru,DIRECT
+  - DOMAIN-SUFFIX,vkontakte.ru,DIRECT
+  - DOMAIN-SUFFIX,userapi.com,DIRECT
+  - DOMAIN-SUFFIX,vk-cdn.net,DIRECT
+  - DOMAIN-SUFFIX,vkuser.net,DIRECT
+  - DOMAIN-SUFFIX,vkuservideo.net,DIRECT
+  - DOMAIN-SUFFIX,mycdn.me,DIRECT
+  - DOMAIN-SUFFIX,mail.ru,DIRECT
+  - DOMAIN-SUFFIX,wbbasket.ru,DIRECT
+  # --- Заблокированное иностранное -> туннель ---
+  - RULE-SET,refilter_domains,Proxy
+  - RULE-SET,refilter_ips,Proxy
+  - GEOSITE,category-ai-!cn,Proxy
+  # --- Cloudflare / Fastly (RKN-троттлинг по IP) -> туннель ---
+  - IP-CIDR,173.245.48.0/20,Proxy,no-resolve
+  - IP-CIDR,103.21.244.0/22,Proxy,no-resolve
+  - IP-CIDR,103.22.200.0/22,Proxy,no-resolve
+  - IP-CIDR,103.31.4.0/22,Proxy,no-resolve
+  - IP-CIDR,141.101.64.0/18,Proxy,no-resolve
+  - IP-CIDR,108.162.192.0/18,Proxy,no-resolve
+  - IP-CIDR,190.93.240.0/20,Proxy,no-resolve
+  - IP-CIDR,188.114.96.0/20,Proxy,no-resolve
+  - IP-CIDR,197.234.240.0/22,Proxy,no-resolve
+  - IP-CIDR,198.41.128.0/17,Proxy,no-resolve
+  - IP-CIDR,162.158.0.0/15,Proxy,no-resolve
+  - IP-CIDR,104.16.0.0/13,Proxy,no-resolve
+  - IP-CIDR,104.24.0.0/14,Proxy,no-resolve
+  - IP-CIDR,172.64.0.0/13,Proxy,no-resolve
+  - IP-CIDR,131.0.72.0/22,Proxy,no-resolve
+  - IP-CIDR,23.235.32.0/20,Proxy,no-resolve
+  - IP-CIDR,43.249.72.0/22,Proxy,no-resolve
+  - IP-CIDR,103.244.50.0/24,Proxy,no-resolve
+  - IP-CIDR,103.245.222.0/23,Proxy,no-resolve
+  - IP-CIDR,103.245.224.0/24,Proxy,no-resolve
+  - IP-CIDR,104.156.80.0/20,Proxy,no-resolve
+  - IP-CIDR,140.248.64.0/18,Proxy,no-resolve
+  - IP-CIDR,140.248.128.0/17,Proxy,no-resolve
+  - IP-CIDR,146.75.0.0/16,Proxy,no-resolve
+  - IP-CIDR,151.101.0.0/16,Proxy,no-resolve
+  - IP-CIDR,157.52.64.0/18,Proxy,no-resolve
+  - IP-CIDR,167.82.0.0/17,Proxy,no-resolve
+  - IP-CIDR,167.82.128.0/20,Proxy,no-resolve
+  - IP-CIDR,167.82.160.0/20,Proxy,no-resolve
+  - IP-CIDR,167.82.224.0/19,Proxy,no-resolve
+  - IP-CIDR,172.111.64.0/18,Proxy,no-resolve
+  - IP-CIDR,185.31.16.0/22,Proxy,no-resolve
+  - IP-CIDR,199.27.72.0/21,Proxy,no-resolve
+  - IP-CIDR,199.232.0.0/16,Proxy,no-resolve
+  # --- geoip fallback ---
+  - GEOIP,CN,DIRECT
+  - GEOIP,RU,DIRECT
+  - MATCH,DIRECT
