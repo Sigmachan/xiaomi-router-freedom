@@ -24,6 +24,7 @@ This kit packages both paths + the DNS-poisoning fix + curated routing domain li
 | `entware/uninstall.sh` | Full clean rollback. |
 | `dns/fix-poisoning.md` | Why RU DNS-poisoning makes sites read "unavailable in region" and the fix. |
 | `dns/setup-dnsmasq-agh.sh` | Point the router's dnsmasq at a local AdGuard Home (encrypted DoH upstreams) for the whole LAN. |
+| `dns/force-dns.sh` | Captive DNS: NAT-redirect all LAN `:53` to the router→AGH so clients that hardcode their own resolver (e.g. desktop pinned to 8.8.8.8) can't bypass the encrypted path. Cron it (`/etc` is ramfs). |
 | `singbox/config.template.json` | Sanitized sing-box template (fill in YOUR VLESS node). |
 | `singbox/native-singbox.sh` | Run sing-box **natively** via Entware (no docker) + switch docker↔native on the same redirect port. |
 | `singbox/domains/` | Curated `domain_suffix` lists (YouTube/Discord/Telegram/AI-services/hdrezka/…) for proxy/direct routing. |
@@ -37,6 +38,7 @@ This kit packages both paths + the DNS-poisoning fix + curated routing domain li
 1. Have a USB drive mounted (these routers expose it, e.g. `/mnt/usb-XXXX`). Set `USB_ROOT` in the scripts.
 2. `sh entware/install.sh`  (over SSH as root)
 3. Wire DNS: `sh dns/setup-dnsmasq-agh.sh`  (after you have AdGuard Home running on the box)
+   - Catch clients that hardcode their own DNS: `sh dns/force-dns.sh` (then cron it every minute — see the file header).
 4. Drop your VLESS node into `singbox/config.template.json` and run sing-box (docker or `/opt/bin`).
 
 ## Hardware notes
