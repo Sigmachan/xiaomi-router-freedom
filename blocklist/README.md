@@ -69,7 +69,7 @@ blockctl uninstall   # снести всё подчистую
 ## Безопасность
 
 - **Только `0.0.0.0`-блоки.** Прокси-пины (которые перехватывают домены на чужие IP) отбрасываются — поэтому твой туннель/Reality ничего не теряет.
-- **Allow-list по умолчанию:** `anthropic.com`, `openai.com`, `x.ai`, `claude.ai`, `github*`, и т.д. — их список не заблокирует, даже если они туда попадут.
+- **Allow-list по умолчанию:** AI/dev (`anthropic.com`, `openai.com`, `x.ai`, `claude.ai`, `github*`) **+ ядро Google Play / Android** (`android.clients.google.com`, `dl.google.com`, `play.googleapis.com`, `connectivitycheck.*`, `mtalk.google.com`, `fcm.googleapis.com` …) — чтобы обновления из Play **не висели в «Download pending»** и работали push/проверка сети. Эти домены не заблокируются, даже если попадут в источник. (Сам список malw путь доставки Play и так не трогает — режется только телеметрия вроде `beacons.gvt2.com`.)
 - Свои исключения — в `/data/blocklist/allowlist` (по домену в строке), затем `blockctl update`.
 - Каждое изменение `dnsmasq` бэкапится в `/data/blocklist/dhcp.bak-*`, и при сбое (если `dnsmasq` не поднимется/не резолвит) — **автоматический откат**.
 

@@ -19,7 +19,7 @@
 # ============================================================================
 set -eu
 
-VERSION="1.0.0"
+VERSION="1.0.1"
 REPO_RAW="https://raw.githubusercontent.com/Sigmachan/xiaomi-router-freedom/main"
 SELF_URL="$REPO_RAW/blocklist/blockctl.sh"
 
@@ -34,7 +34,9 @@ CRON_LINE="17 5 * * * $SELF update >/dev/null 2>&1"   # daily 05:17 auto-refresh
 
 DNSMASQ_SECTION="${DNSMASQ_SECTION:-}"  # autodetected if empty
 SOURCES_DEFAULT="https://raw.githubusercontent.com/ImMALWARE/dns.malw.link/refs/heads/master/hosts"
-ALLOW_EXACT_DEFAULT="api.anthropic.com api.console.anthropic.com console.anthropic.com claude.ai api.openai.com chatgpt.com openai.com console.x.ai api.x.ai x.ai raw.githubusercontent.com github.com api.github.com"
+# Never null-route these (exact match). Includes Play Store / Android core so app downloads
+# don't get stuck on "Download pending", connectivity-check works, and FCM push lands.
+ALLOW_EXACT_DEFAULT="api.anthropic.com api.console.anthropic.com console.anthropic.com claude.ai api.openai.com chatgpt.com openai.com console.x.ai api.x.ai x.ai raw.githubusercontent.com github.com api.github.com android.clients.google.com play.googleapis.com play-fe.googleapis.com play.google.com dl.google.com update.googleapis.com android.googleapis.com clients3.google.com clients4.google.com connectivitycheck.gstatic.com connectivitycheck.android.com mtalk.google.com fcm.googleapis.com"
 MIN_ENTRIES=100
 
 BL_LANG="${BL_LANG:-ru}"
