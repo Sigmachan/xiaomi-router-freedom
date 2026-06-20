@@ -20,6 +20,7 @@ This kit packages both paths + the DNS-poisoning fix + curated routing domain li
 ## What's inside
 | Path | What |
 |------|------|
+| **`blocklist/blockctl.sh`** | **One-command LAN-wide ad/tracker/malware DNS blocker.** Pulls `dns.malw.link`, keeps only the `0.0.0.0` blocks (drops geo-proxy pins), wires `dnsmasq`. Persists on ubifs (no ramfs/cron hacks), auto-update, allow-list, auto-rollback. See [`blocklist/README.md`](blocklist/README.md). |
 | `entware/install.sh` | Install Entware into `/opt` bind-mounted to USB (preserves firmware `/opt/filetunnel`). Persistent across reboot via `/data` + cron (because `/etc` is ramfs). |
 | `entware/uninstall.sh` | Full clean rollback. |
 | `dns/fix-poisoning.md` | Why RU DNS-poisoning makes sites read "unavailable in region" and the fix. |
@@ -40,6 +41,7 @@ This kit packages both paths + the DNS-poisoning fix + curated routing domain li
 3. Wire DNS: `sh dns/setup-dnsmasq-agh.sh`  (after you have AdGuard Home running on the box)
    - Catch clients that hardcode their own DNS: `sh dns/force-dns.sh` (then cron it every minute — see the file header).
 4. Drop your VLESS node into `singbox/config.template.json` and run sing-box (docker or `/opt/bin`).
+5. **Block ads/trackers/malware LAN-wide (recommended, 30s):** `wget -O /tmp/blockctl https://raw.githubusercontent.com/Sigmachan/xiaomi-router-freedom/main/blocklist/blockctl.sh && sh /tmp/blockctl install`
 
 ## Hardware notes
 - `aarch64_cortex-a55` (IPQ5424) / `-a53` (some). musl libc. Kernel 6.6.x vendor build.
